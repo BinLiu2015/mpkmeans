@@ -24,6 +24,7 @@ std::vector<float> getNextLineAndSplitIntoTokens(std::istream& str){
 }
 
 std::vector<vector<float> > getChunk(std::istream& str, int chunkSize){
+	clock_t starttime = clock();
 	std::vector< vector<float> > chunkInstances;
 	std::vector<float>   instance;
 
@@ -34,11 +35,12 @@ std::vector<vector<float> > getChunk(std::istream& str, int chunkSize){
 		else
 			break;
 	}
-
+	vec2matTime += clock() - starttime;
 	return chunkInstances;
 }
 
 Mat* vec2Mat(const std::vector< vector<float> > chunkInstances){
+	clock_t starttime = clock();
 
 	if(chunkInstances.size() == 0)
 		return new Mat(0,0,CV_32F);
@@ -54,6 +56,7 @@ Mat* vec2Mat(const std::vector< vector<float> > chunkInstances){
 			mat->at<float>(i,j) = chunkInstances[i][j];
 		}
 	}
+	vec2matTime += clock() - starttime;
 	return mat;
 }
 
