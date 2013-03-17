@@ -35,7 +35,7 @@ std::vector<vector<float> > getChunk(std::istream& str, int chunkSize){
 		else
 			break;
 	}
-	vec2matTime += clock() - starttime;
+	vec2matTime += (double)(clock() - starttime);
 	return chunkInstances;
 }
 
@@ -56,7 +56,7 @@ Mat* vec2Mat(const std::vector< vector<float> > chunkInstances){
 			mat->at<float>(i,j) = chunkInstances[i][j];
 		}
 	}
-	vec2matTime += clock() - starttime;
+	vec2matTime += (double)(clock() - starttime);
 	return mat;
 }
 

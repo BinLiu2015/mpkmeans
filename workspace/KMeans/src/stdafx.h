@@ -24,5 +24,5 @@ Mat* vec2Mat(std::vector< vector<float> > chunkInstances);
 std::vector<vector<float> > getChunk(std::istream& str, int chunkSize);
 void evaluate(char* fileName,int chunk_size);
 
-static clock_t vec2matTime = clock() - clock();
-static clock_t loadtime = clock() - clock();
+static double vec2matTime = 0;
+static double loadtime = 0;
