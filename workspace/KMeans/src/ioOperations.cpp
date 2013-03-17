@@ -57,7 +57,22 @@ Mat* vec2Mat(const std::vector< vector<float> > chunkInstances){
 	return mat;
 }
 
-void evaluate(char* fileName,int chunk_size){
+//std::vector< vector<float> > vec2Mat(Mat matrix){
+//
+//	std::vector< vector<float> > vec;
+//	int num_instances = matrix.rows;
+//	int num_attributes = matrix.cols;
+//
+//
+//	for(int i=0; i<num_instances; i++){
+//		for(int j=0; j<num_attributes; j++){
+//			mat->at<float>(i,j) = chunkInstances[i][j];
+//		}
+//	}
+//	return mat;
+//}
+
+void computeSSE(char* fileName,int chunk_size){
 
 }
 

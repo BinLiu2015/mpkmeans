@@ -48,6 +48,37 @@ Mat aggregateCenters(vector< chunkInfo* > chunksInfoList){
 	return mat;
 }
 
+double leastDistance(Mat point, Mat centers){
+	double leastDistance = DBL_MAX;
+	for(int i=0; i<centers.rows; i++){
+		double dist = 0;
+		for(int j=0; j<point.cols; j++){
+			double dimdist =  point.at<float>(0,j) - centers.at<float>(i,j);
+			dist += dimdist * dimdist; 	//^2
+		}
+		dist = sqrt(dist);
+		if(leastDistance > dist)
+			leastDistance = dist;
+	}
+	return leastDistance;
+}
+
+void computerSSE(Mat centers, char* fileName, int chunkSize){
+	ifstream file(fileName);
+	double sse = 0;
+	while(1){
+		Mat* data;
+		data = vec2Mat( getChunk(file,chunkSize) );
+		int currentChunkSize = data->rows;
+		for(int i=0; i < currentChunkSize; i++)
+			sse += leastDistance(data->row(i), centers);
+
+		delete data;
+		if(currentChunkSize < chunkSize) break;	//reached EOF
+	}
+	cout << "SSE = " << sse << endl;
+}
+
 int main( int argc, char** argv )
 {
 	clock_t start = clock();
@@ -100,5 +131,6 @@ int main( int argc, char** argv )
 	clock_t end = clock();
 	double time_elapsed_in_seconds = (end - start)/((double)CLOCKS_PER_SEC);
 	cout << endl << "Clustering time in seconds: " <<time_elapsed_in_seconds << endl;
-	computerSSE()
+	cout<< "computing SSE..." << endl; cout.flush();
+	computerSSE(centers, fileName,chunk_size);
 }
