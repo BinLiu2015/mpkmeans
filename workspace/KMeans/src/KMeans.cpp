@@ -96,6 +96,15 @@ int main( int argc, char** argv )
 	ifstream file(fileName);
 	int chunkNo = 0;
 
+	//====================================== TEST ==================================================
+//	Mat * data;
+//	while(1){
+//		data = vec2Mat( getChunk(file,chunk_size));
+//		if(data->rows < chunk_size) break;
+//	}
+//	exit(0);
+	//==============================================================================================
+
 	//running chunks
 	while(1){
 		//cout << "Loading Chunk " << chunkNo << "...\n"; cout.flush();
@@ -131,11 +140,11 @@ int main( int argc, char** argv )
 	clock_t end = clock();
 	double time_elapsed_in_seconds = (end - start)/((double)CLOCKS_PER_SEC);
 	cout << endl << "Total time in seconds: " <<time_elapsed_in_seconds << endl;
-	cout << "vec2mat Time:\t" << vec2matTime / ((double)CLOCKS_PER_SEC) << endl;
-	cout << "Loading time:\t" << loadtime / ((double)CLOCKS_PER_SEC) << endl;
+	cout << "vec2mat: " << (vec2matTime / (double)CLOCKS_PER_SEC) << endl;
+	cout << "loadtime: " << (loadtime / (double)CLOCKS_PER_SEC) << endl;
 	cout<< "computing SSE..." << endl; cout.flush();
 	computerSSE(centers, fileName,chunk_size);
-	cout << "vec2mat Time:\t" << vec2matTime / ((double)CLOCKS_PER_SEC) << endl;
-	cout << "Loading time:\t" << loadtime / ((double)CLOCKS_PER_SEC) << endl;
+	cout << "loadtime: " << (loadtime / (double)CLOCKS_PER_SEC) << endl;
+	cout << "vec2mat: " << (vec2matTime / (double)CLOCKS_PER_SEC) << endl;
 
 }

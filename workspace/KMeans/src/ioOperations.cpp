@@ -9,13 +9,13 @@ using namespace std;
 using namespace cv;
 
 std::vector<float> getNextLineAndSplitIntoTokens(std::istream& str){
+
 	std::vector<float>   result;
 	std::string                line;
 	std::getline(str,line);
 
-	std::stringstream          lineStream(line);
+	std::istringstream          lineStream(line);
 	std::string                cell;
-
 	while(std::getline(lineStream,cell,','))
 	{
 		result.push_back(atof(cell.c_str()));
@@ -35,7 +35,10 @@ std::vector<vector<float> > getChunk(std::istream& str, int chunkSize){
 		else
 			break;
 	}
-	vec2matTime += (double)(clock() - starttime);
+	loadtime += (double)(clock() - starttime);
+	cout << "loadtime: " << (loadtime / (double)CLOCKS_PER_SEC) << endl;
+	cout << "chunk elements: " << chunkInstances.size()<< endl;
+	cout << "chunk capacity: " << chunkInstances.capacity()<< endl;
 	return chunkInstances;
 }
 
@@ -57,6 +60,7 @@ Mat* vec2Mat(const std::vector< vector<float> > chunkInstances){
 		}
 	}
 	vec2matTime += (double)(clock() - starttime);
+	cout << "vec2mat: " << (vec2matTime / (double)CLOCKS_PER_SEC) << endl;
 	return mat;
 }
 
