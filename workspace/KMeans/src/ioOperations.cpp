@@ -83,7 +83,7 @@ void printUsage(){
 }
 
 void loadParameters(int argc, char** argv, int &num_of_threads, int &numClusters,
-		int &numClustersForChunks, int &chunk_size, char* &fileName){
+		int &numClustersForChunks, int& chunk_size, char* &fileName){
 	int i = 1;
 	if(argc < 2)
 		printUsage();
@@ -94,13 +94,15 @@ void loadParameters(int argc, char** argv, int &num_of_threads, int &numClusters
 			numClusters = atoi(argv[i+1]);
 		} else if (! strcmp(argv[i] , "-c")) {
 			chunk_size = atoi(argv[i+1]);
-		} else if (! strcmp(argv[i+1] , "-chk")) {
+		} else if (! strcmp(argv[i] , "-chk")) {
 			numClustersForChunks = atoi(argv[i+1]);
-		}else if (! strcmp(argv[i+1] , "-t")) {
+		}else if (! strcmp(argv[i] , "-t")) {
 			num_of_threads = atoi(argv[i+1]);
 		}
 		i++;
 	}
+	cout << "num_of_threads: " << num_of_threads << "\tnumClusters: " << numClusters <<
+			"\nnumClustersForChunks: " << numClustersForChunks << "chunk_size: " << chunk_size << endl;
 }
 
 template< typename TYPE >

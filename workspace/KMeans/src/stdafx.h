@@ -1,3 +1,5 @@
+#pragma once
+
 #include <limits.h>
 #include <cstdlib>
 #include <fstream>
@@ -8,6 +10,7 @@
 #include "opencv2/highgui/highgui.hpp"
 #include "opencv2/ml/ml.hpp"
 #include <pthread.h>
+#include <semaphore.h>
 #include <sstream>
 #include <stdio.h>
 #include <stdlib.h>
@@ -26,4 +29,4 @@ Mat vec2Mat(std::vector< vector<float> > chunkInstances);
 vector<vector<float> > getChunk(vector<string> lines);
 void evaluate(char* fileName,int chunk_size);
 
-static double numFeatures = 0;
+static int numFeatures = 0;
