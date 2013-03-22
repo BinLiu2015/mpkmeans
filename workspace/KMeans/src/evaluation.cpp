@@ -80,5 +80,5 @@ int main( int argc, char** argv )
 	loadParameters(argc, argv, dataFileName, centersFileName);
 	Mat data = loadDatasetAtOnce(dataFileName);
 	Mat centers = loadDatasetAtOnce(centersFileName);
-	cout << "SSE:\t" << computerSSE(centers,data);
+	cout << "SSE:\t" << computerSSE(centers,data) << endl;
 }
