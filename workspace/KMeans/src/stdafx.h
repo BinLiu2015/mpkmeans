@@ -20,11 +20,10 @@ using namespace std;
 
 
 //ioOperations
+vector<string>* getChunkLines(std::istream& str, int chunkSize);
 void loadParameters(int argc, char** argv, int &num_of_threads, int &numClusters,int &numClustersForChunks, int &chunk_size, char* &fileName);
-Mat* vec2Mat(std::vector< vector<float> > chunkInstances);
-std::vector<vector<float> > getChunk(std::istream& str, int chunkSize);
+Mat vec2Mat(std::vector< vector<float> > chunkInstances);
+vector<vector<float> > getChunk(vector<string> lines);
 void evaluate(char* fileName,int chunk_size);
 
-static double vec2matTime = 0;
-static double loadtime = 0;
-static double sdumnums = 0;
+static double numFeatures = 0;

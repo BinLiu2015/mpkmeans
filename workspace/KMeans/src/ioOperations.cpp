@@ -8,13 +8,25 @@
 using namespace std;
 using namespace cv;
 
-//float newFloat(){ float f; return f; }
-std::vector<float> getNextLineAndSplitIntoTokens(std::istream& str){
+vector<string>* getChunkLines(std::istream& str, int chunkSize){
+	vector<string>*   lines = new vector<string>;
+	lines->reserve(chunkSize);
+	for(int i =0; i<chunkSize; i++ ){
+		std::string line;
+		getline(str,line);
 
-	std::vector<float>   result;//(69, newFloat());
-	result.reserve(69);
-	std::string                line;
-	std::getline(str,line);
+		lines->push_back(line);
+		if(line.size() <1)
+			break;
+	}
+	return lines;
+}
+
+std::vector<float> splitIntoTokens(std::string line){
+
+	std::vector<float>   result;
+
+	if(numFeatures > 0) result.reserve(numFeatures);	//performance tuning
 
 	std::istringstream          lineStream(line);
 	std::string                cell;
@@ -22,65 +34,47 @@ std::vector<float> getNextLineAndSplitIntoTokens(std::istream& str){
 	{
 		result.push_back(atof(cell.c_str()));
 	}
+
+	if(numFeatures <= 0) numFeatures = result.size();
+
 	return result;
 }
 
-std::vector<vector<float> > getChunk(std::istream& str, int chunkSize){
-	clock_t starttime = clock();
+vector<vector<float> > getChunk(vector<string> lines){
+	int currentChunkSize = lines.size();
 	std::vector< vector<float> > chunkInstances;
-	chunkInstances.reserve(2458285);
+	chunkInstances.reserve(currentChunkSize);
 	std::vector<float>   instance;
 
-	for(int i =0; i<chunkSize; i++ ){
-		instance = getNextLineAndSplitIntoTokens(str);
+	for(int i =0; i<currentChunkSize; i++ ){
+		instance = splitIntoTokens(lines[i]);
 		if(instance.size() > 0)
 			chunkInstances.push_back(instance);
 		else
 			break;
 	}
-	loadtime += (double)(clock() - starttime);
-	cout << "loadtime: " << (loadtime / (double)CLOCKS_PER_SEC) << endl;
-	cout << "chunk elements: " << chunkInstances.size()<< endl;
-	cout << "chunk capacity: " << chunkInstances.capacity()<< endl;
+
 	return chunkInstances;
 }
 
-Mat* vec2Mat(const std::vector< vector<float> > chunkInstances){
-	clock_t starttime = clock();
+Mat vec2Mat(const std::vector< vector<float> > chunkInstances){
 
 	if(chunkInstances.size() == 0)
-		return new Mat(0,0,CV_32F);
+		return Mat(0,0,CV_32F);
 	else if (chunkInstances[0].size() == 0)
-		return new Mat(0,0,CV_32F);
+		return Mat(0,0,CV_32F);
 
 	int num_instances = chunkInstances.size();
 	int num_attributes = chunkInstances[0].size();
 
-	Mat* mat = new Mat(num_instances,num_attributes,CV_32F);
+	Mat mat(num_instances,num_attributes,CV_32F);
 	for(int i=0; i<num_instances; i++){
 		for(int j=0; j<num_attributes; j++){
-			mat->at<float>(i,j) = chunkInstances[i][j];
+			mat.at<float>(i,j) = chunkInstances[i][j];
 		}
 	}
-	vec2matTime += (double)(clock() - starttime);
-	cout << "vec2mat: " << (vec2matTime / (double)CLOCKS_PER_SEC) << endl;
 	return mat;
 }
-
-//std::vector< vector<float> > mat2vec(Mat matrix){
-//
-//	std::vector< vector<float> > vec;
-//	int num_instances = matrix.rows;
-//	int num_attributes = matrix.cols;
-//
-//
-//	for(int i=0; i<num_instances; i++){
-//		for(int j=0; j<num_attributes; j++){
-//			mat->at<float>(i,j) = chunkInstances[i][j];
-//		}
-//	}
-//	return mat;
-//}
 
 
 void printUsage(){

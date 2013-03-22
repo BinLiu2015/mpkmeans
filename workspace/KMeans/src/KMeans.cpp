@@ -6,8 +6,9 @@
 struct chunkInfo
 {
 	pthread_t tid;
+	vector<std::string>* lines;
 	int numClustersForChunks, chunkNo, attempts;
-	Mat *data,centers;
+	Mat centers;
 };
 
 /**
@@ -17,13 +18,15 @@ struct chunkInfo
 void *cluster(void *param){
 	chunkInfo *args;
 	args = (chunkInfo *) param;
-	cout << "\x1b[1;31m++Clustering chunk " << args->chunkNo << " with " << args->data->rows << " rows\x1b[0m\n"; cout.flush();
+
+	Mat data = vec2Mat( getChunk(*(args->lines)) );
+	cout << "\x1b[1;31m++Clustering chunk " << args->chunkNo << " with " << data.rows << " rows\x1b[0m\n"; cout.flush();
 
 	Mat labels;
-	kmeans(*(args->data), args->numClustersForChunks, labels, TermCriteria(CV_TERMCRIT_ITER|CV_TERMCRIT_EPS, 0.0001, 10000), args->attempts, KMEANS_PP_CENTERS, args->centers);
+	kmeans(data, args->numClustersForChunks, labels, TermCriteria(CV_TERMCRIT_ITER|CV_TERMCRIT_EPS, 0.0001, 10000), args->attempts, KMEANS_PP_CENTERS, args->centers);
 
-	cout << "\x1b[36;1m--Clustered chunk " << args->chunkNo << " with " << args->data->rows << " rows\x1b[0m\n"; cout.flush();
-	delete args->data;
+	cout << "\x1b[36;1m--Clustered chunk " << args->chunkNo << " with " << data.rows << " rows\x1b[0m\n"; cout.flush();
+	delete args->lines;
 }
 
 /**
@@ -63,26 +66,23 @@ double leastDistance(Mat point, Mat centers){
 	return leastDistance;
 }
 
-void computerSSE(Mat centers, char* fileName, int chunkSize){
-	ifstream file(fileName);
-	double sse = 0;
-	while(1){
-		Mat* data;
-		data = vec2Mat( getChunk(file,chunkSize) );
-		int currentChunkSize = data->rows;
-		for(int i=0; i < currentChunkSize; i++)
-			sse += leastDistance(data->row(i), centers);
-
-		delete data;
-		if(currentChunkSize < chunkSize) break;	//reached EOF
-	}
-	cout << "SSE = " << sse << endl;
-}
+//void computerSSE(Mat centers, char* fileName, int chunkSize){
+//	ifstream file(fileName);
+//	double sse = 0;
+//	while(1){
+//		Mat data = vec2Mat( getChunk(file,chunkSize) );
+//		int currentChunkSize = data->rows;
+//		for(int i=0; i < currentChunkSize; i++)
+//			sse += leastDistance(data->row(i), centers);
+//
+//		delete data;
+//		if(currentChunkSize < chunkSize) break;	//reached EOF
+//	}
+//	cout << "SSE = " << sse << endl;
+//}
 
 int main( int argc, char** argv )
 {
-	clock_t start = clock();
-
 	//Loading parameters
 	int numClustersForChunks =50, numClusters = 5;
 	int num_of_threads = 30;
@@ -96,24 +96,15 @@ int main( int argc, char** argv )
 	ifstream file(fileName);
 	int chunkNo = 0;
 
-	//====================================== TEST ==================================================
-//	Mat * data;
-//	while(1){
-//		data = vec2Mat( getChunk(file,chunk_size));
-//		if(data->rows < chunk_size) break;
-//	}
-//	exit(0);
-	//==============================================================================================
-
 	//running chunks
 	while(1){
 		//cout << "Loading Chunk " << chunkNo << "...\n"; cout.flush();
-		Mat* data;
-		data = vec2Mat( getChunk(file,chunk_size) );
-		int lastChunkSize = data->rows;
+		vector<string>* lines;
+		lines = getChunkLines(file,chunk_size);
+		int lastChunkSize = lines->size();
 
 		chunkInfo *currentChunkInfo = new chunkInfo();
-		currentChunkInfo->data = data;
+		currentChunkInfo->lines = lines;
 		currentChunkInfo->numClustersForChunks = numClustersForChunks;
 		currentChunkInfo->chunkNo = chunkNo;
 		currentChunkInfo->attempts = attempts;
@@ -136,15 +127,7 @@ int main( int argc, char** argv )
 	cout << "points: " << points.rows << endl; cout.flush();
 	kmeans(points, numClusters, labels, TermCriteria(CV_TERMCRIT_ITER|CV_TERMCRIT_EPS, 0.0001, 10000), attempts, KMEANS_PP_CENTERS, centers );
 	cout << centers;
-
-	clock_t end = clock();
-	double time_elapsed_in_seconds = (end - start)/((double)CLOCKS_PER_SEC);
-	cout << endl << "Total time in seconds: " <<time_elapsed_in_seconds << endl;
-	cout << "vec2mat: " << (vec2matTime / (double)CLOCKS_PER_SEC) << endl;
-	cout << "loadtime: " << (loadtime / (double)CLOCKS_PER_SEC) << endl;
-	cout<< "computing SSE..." << endl; cout.flush();
-	computerSSE(centers, fileName,chunk_size);
-	cout << "loadtime: " << (loadtime / (double)CLOCKS_PER_SEC) << endl;
-	cout << "vec2mat: " << (vec2matTime / (double)CLOCKS_PER_SEC) << endl;
+//	cout<< "computing SSE..." << endl; cout.flush();
+//	computerSSE(centers, fileName,chunk_size);
 
 }
