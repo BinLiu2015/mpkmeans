@@ -8,9 +8,11 @@
 using namespace std;
 using namespace cv;
 
+//float newFloat(){ float f; return f; }
 std::vector<float> getNextLineAndSplitIntoTokens(std::istream& str){
 
-	std::vector<float>   result;
+	std::vector<float>   result;//(69, newFloat());
+	result.reserve(69);
 	std::string                line;
 	std::getline(str,line);
 
@@ -26,6 +28,7 @@ std::vector<float> getNextLineAndSplitIntoTokens(std::istream& str){
 std::vector<vector<float> > getChunk(std::istream& str, int chunkSize){
 	clock_t starttime = clock();
 	std::vector< vector<float> > chunkInstances;
+	chunkInstances.reserve(2458285);
 	std::vector<float>   instance;
 
 	for(int i =0; i<chunkSize; i++ ){
