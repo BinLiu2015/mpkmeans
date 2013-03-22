@@ -8,11 +8,29 @@
 using namespace std;
 using namespace cv;
 
-vector<string>* getChunkLines(std::istream& str, int chunkSize){
+int countLines(char* filename){
+	ifstream file(filename);
+	int number_of_lines = count(istreambuf_iterator<char>(file), istreambuf_iterator<char>(), '\n');
+	file.close();
+	cout << "there are " << number_of_lines << " lines in " << filename << endl;
+	return number_of_lines;
+}
+
+Mat loadDatasetAtOnce(char* fileName){
+	cout << "loading " << fileName << "...\n";
+	vector<string>* lines;
+	int datasize = countLines(fileName);
+
+	ifstream file(fileName);
+	lines = getChunkLines(file,datasize);
+	return vec2Mat( getChunk(*lines) );
+}
+
+vector<string>* getChunkLines(istream& str, int chunkSize){
 	vector<string>*   lines = new vector<string>;
 	lines->reserve(chunkSize);
 	for(int i =0; i<chunkSize; i++ ){
-		std::string line;
+		string line;
 		getline(str,line);
 
 		lines->push_back(line);
@@ -22,15 +40,15 @@ vector<string>* getChunkLines(std::istream& str, int chunkSize){
 	return lines;
 }
 
-std::vector<float> splitIntoTokens(std::string line){
+vector<float> splitIntoTokens(string line){
 
-	std::vector<float>   result;
+	vector<float>   result;
 
 	if(numFeatures > 0) result.reserve(numFeatures);	//performance tuning
 
-	std::istringstream          lineStream(line);
-	std::string                cell;
-	while(std::getline(lineStream,cell,','))
+	istringstream          lineStream(line);
+	string                cell;
+	while(getline(lineStream,cell,','))
 	{
 		result.push_back(atof(cell.c_str()));
 	}
@@ -42,9 +60,9 @@ std::vector<float> splitIntoTokens(std::string line){
 
 vector<vector<float> > getChunk(vector<string> lines){
 	int currentChunkSize = lines.size();
-	std::vector< vector<float> > chunkInstances;
+	vector< vector<float> > chunkInstances;
 	chunkInstances.reserve(currentChunkSize);
-	std::vector<float>   instance;
+	vector<float>   instance;
 
 	for(int i =0; i<currentChunkSize; i++ ){
 		instance = splitIntoTokens(lines[i]);
@@ -57,7 +75,7 @@ vector<vector<float> > getChunk(vector<string> lines){
 	return chunkInstances;
 }
 
-Mat vec2Mat(const std::vector< vector<float> > chunkInstances){
+Mat vec2Mat(const vector< vector<float> > chunkInstances){
 
 	if(chunkInstances.size() == 0)
 		return Mat(0,0,CV_32F);
@@ -77,36 +95,24 @@ Mat vec2Mat(const std::vector< vector<float> > chunkInstances){
 }
 
 
-void printUsage(){
-	cout << "Usage: KMeans -f fileName [-k num_of_clusters] [-c chunk_size] [-chk num_of_cluster_centers_for_each_chunk] [-t max_threads]" << endl;
-	exit(0);
-}
-
-void loadParameters(int argc, char** argv, int &num_of_threads, int &numClusters,
-		int &numClustersForChunks, int& chunk_size, char* &fileName){
-	int i = 1;
-	if(argc < 2)
-		printUsage();
-	while (i + 1 < argc){ // Check that we haven't finished parsing already
-		if (strcmp(argv[i],"-f") == 0) {
-			fileName = argv[i+1];
-		} else if (! strcmp(argv[i] , "-k")) {
-			numClusters = atoi(argv[i+1]);
-		} else if (! strcmp(argv[i] , "-c")) {
-			chunk_size = atoi(argv[i+1]);
-		} else if (! strcmp(argv[i] , "-chk")) {
-			numClustersForChunks = atoi(argv[i+1]);
-		}else if (! strcmp(argv[i] , "-t")) {
-			num_of_threads = atoi(argv[i+1]);
+void saveCenters(Mat centers, char* outputFileName){
+	ofstream outfile;
+	outfile.open(outputFileName);
+	int rows = centers.rows;
+	int cols = centers.row(1).cols;
+	for(int i=0; i<rows; i++){
+		for (int j=0; j<cols; j++){
+			outfile << centers.at<float>(i,j);
+			if(j != (cols-1))
+				outfile << ",";
 		}
-		i++;
+		outfile << endl;
 	}
-	cout << "num_of_threads: " << num_of_threads << "\tnumClusters: " << numClusters <<
-			"\nnumClustersForChunks: " << numClustersForChunks << "chunk_size: " << chunk_size << endl;
+	outfile.close();
 }
 
 template< typename TYPE >
 void print(TYPE val)
 {
-	std::cout << val << " ";
+	cout << val << " ";
 }

@@ -18,6 +18,8 @@ sem_t empty,full;
 int f,e;
 pthread_mutex_t mutex;
 
+void loadParameters(int argc, char** argv, int &num_of_threads, int &numClusters, int &numClustersForChunks, int& chunk_size, char* &fileName, char* &outputFileName);
+
 
 /**
  * The clustering function: Classifies the data and returns the centers
@@ -64,14 +66,11 @@ void *clusterThread(void *param){
  * Aggregates outputs of all chunks into a singe matrix
  */
 Mat aggregateCenters(vector< Mat* > centers){
-	cout << " ++++++++++++ point1 +++++++++++++++"; cout.flush();
 	int numColumns = centers[0]->cols;
 	int numPoints = 0;
-	cout << " ++++++++++++ point2 +++++++++++++++"; cout.flush();
 	for(unsigned int i=0; i< centers.size();i++)
 		numPoints += centers[i]->rows;
 
-	cout << " ++++++++++++ point3 +++++++++++++++"; cout.flush();
 	//coping centers of each chunk to a single matrix
 	Mat mat(numPoints,numColumns,CV_32F);
 	int pointsAdded = 0;
@@ -83,7 +82,6 @@ Mat aggregateCenters(vector< Mat* > centers){
 		}
 
 	}
-	cout << " ++++++++++++ point4 +++++++++++++++"; cout.flush();
 	cout << "Total centers: " << mat.rows << endl; cout.flush();
 	return mat;
 }
@@ -133,12 +131,11 @@ void wait_for_threads(int num_of_threads){
 int main( int argc, char** argv )
 {
 	//Loading parameters
-	int numClustersForChunks =50, numClusters = 5;
-	int num_of_threads = 2;
+	int numClustersForChunks, numClusters,num_of_threads,chunk_size;
 	int attempts = 3;
-	int chunk_size = 1000;
 	char* fileName;
-	loadParameters(argc,argv, num_of_threads, numClusters, numClustersForChunks, chunk_size, fileName);
+	char* outputFileName;
+	loadParameters(argc,argv, num_of_threads, numClusters, numClustersForChunks, chunk_size, fileName, outputFileName);
 
 	//running threads and semaphores
 	init_threads(num_of_threads);
@@ -170,13 +167,46 @@ int main( int argc, char** argv )
 	}
 
 	cout<<"Pass 2..." << endl; cout.flush();
-	cout << " ++++++++++++ point a +++++++++++++++"; cout.flush();
 	Mat centers,labels;
-	cout << " ++++++++++++ pointb +++++++++++++++"; cout.flush();
 	Mat points = aggregateCenters(centersCollection);
 	cout << "points: " << points.rows << endl; cout.flush();
 	kmeans(points, numClusters, labels, TermCriteria(CV_TERMCRIT_ITER|CV_TERMCRIT_EPS, 0.0001, 10000), attempts, KMEANS_PP_CENTERS, centers );
+	cout << "Saving centers..." << endl; cout.flush();
+	saveCenters(centers, outputFileName);
+}
 
-	//	cout<< "computing SSE..." << endl; cout.flush();
-	//	computerSSE(centers, fileName,chunk_size);
+void printUsage(){
+	cout << "Usage: KMeans -f fileName [-o outputfileName] [-k num_of_clusters] [-c chunk_size] [-chk num_of_cluster_centers_for_each_chunk] [-t max_threads]" << endl;
+	exit(0);
+}
+
+void loadParameters(int argc, char** argv, int &num_of_threads, int &numClusters,
+		int &numClustersForChunks, int& chunk_size, char* &fileName, char* &outputFileName){
+	//DEFAULT VALUES
+	numClustersForChunks =50;
+	numClusters = 5;
+	num_of_threads = 2;
+	chunk_size = 1000;
+	outputFileName = "output.txt";
+	int i = 1;
+	if(argc < 2)
+		printUsage();
+	while (i + 1 < argc){ // Check that we haven't finished parsing already
+		if (strcmp(argv[i],"-f") == 0) {
+			fileName = argv[i+1];
+		} else if (! strcmp(argv[i] , "-k")) {
+			numClusters = atoi(argv[i+1]);
+		} else if (! strcmp(argv[i] , "-c")) {
+			chunk_size = atoi(argv[i+1]);
+		} else if (! strcmp(argv[i] , "-chk")) {
+			numClustersForChunks = atoi(argv[i+1]);
+		}else if (! strcmp(argv[i] , "-t")) {
+			num_of_threads = atoi(argv[i+1]);
+		}else if (! strcmp(argv[i] , "-o")) {
+			outputFileName = argv[i+1];
+		}
+		i++;
+	}
+	cout << "num_of_threads: " << num_of_threads << "\tnumClusters: " << numClusters <<
+			"\nnumClustersForChunks: " << numClustersForChunks << "chunk_size: " << chunk_size << endl;
 }
