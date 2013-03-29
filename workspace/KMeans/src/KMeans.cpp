@@ -103,9 +103,7 @@ void init_threads(int num_of_threads){
 void push_chunk(chunkInfo *currentChunkInfo){
 	sem_wait(&empty);
 	pthread_mutex_lock(&mutex);
-	cout << "pushing chunk " << currentChunkInfo->chunkNo; cout.flush();
 	chunksQueue.push_back(currentChunkInfo);
-	cout << "\tqueue size: " << chunksQueue.size() << endl; cout.flush();
 	pthread_mutex_unlock(&mutex);
 	sem_post(&full);
 }
