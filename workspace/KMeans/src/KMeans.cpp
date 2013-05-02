@@ -130,7 +130,7 @@ int main( int argc, char** argv )
 {
 	//Loading parameters
 	int numClustersForChunks, numClusters,num_of_threads,chunk_size;
-	int attempts = 3;
+	int attempts = 1;
 	char* fileName;
 	char* outputFileName;
 	loadParameters(argc,argv, num_of_threads, numClusters, numClustersForChunks, chunk_size, fileName, outputFileName);
