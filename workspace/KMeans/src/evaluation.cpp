@@ -10,47 +10,6 @@ using namespace std;
 using namespace cv;
 
 
-double leastDistance(Mat point, Mat centers){
-	double leastDistance = DBL_MAX;
-	for(int i=0; i<centers.rows; i++){
-		double dist = 0;
-		for(int j=0; j<point.cols; j++){
-			double dimdist =  point.at<float>(0,j) - centers.at<float>(i,j);
-			dist += dimdist * dimdist; 	//^2
-		}
-		dist = sqrt(dist);
-		if(leastDistance > dist)
-			leastDistance = dist;
-	}
-	return leastDistance;
-}
-//void computerSSE(Mat centers, char* fileName){
-//	double sse = 0;
-//	while(1){
-//		vector<string>* lines;
-//		int datasize = countLines(fileName);
-//
-//		ifstream file(fileName);
-//		lines = getChunkLines(file,datasize);
-//		Mat data = vec2Mat( getChunk(file, lines) );
-//		int currentChunkSize = data->rows;
-//		for(int i=0; i < currentChunkSize; i++)
-//			sse += leastDistance(data->row(i), centers);
-//
-//		delete data;
-//		if(currentChunkSize < chunkSize) break;	//reached EOF
-//	}
-//	cout << "SSE = " << sse << endl;
-//}
-
-double computerSSE(Mat centers, Mat data){
-	double sse = 0;
-	int rows = data.rows;
-	for(int i=0; i < rows; i++)
-		sse += leastDistance(data.row(i), centers);
-	return sse;
-}
-
 void printUsage(){
 	cout << "Usage: KMeansEval -df dataFileName -cf centersfileName" << endl;
 	exit(0);
@@ -80,6 +39,6 @@ int main( int argc, char** argv )
 	loadParameters(argc, argv, dataFileName, centersFileName);
 	Mat data = loadDatasetAtOnce(dataFileName);
 	Mat centers = loadDatasetAtOnce(centersFileName);
-	cout << "SSE:\t" << computerSSE(centers,data) << endl;
+	cout << "SSE:\t" << computeSSE(centers,data) << endl;
 
 }

@@ -19,6 +19,10 @@ void saveCenters(Mat centers, char* outputFileName);
 void evaluate(char* fileName,int chunk_size);
 int countLines(char* filename);
 Mat loadDatasetAtOnce(char* fileName);
+double evaluateSSEFromFile(Mat centers, char* dataFileName);
+
+double leastDistance(Mat point, Mat centers);
+double computeSSE(Mat centers, Mat data);
 
 
 

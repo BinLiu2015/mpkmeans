@@ -128,6 +128,7 @@ void wait_for_threads(int num_of_threads){
 
 int main( int argc, char** argv )
 {
+
 	//Loading parameters
 	int numClustersForChunks, numClusters,num_of_threads,chunk_size;
 	int attempts = 1;
@@ -135,6 +136,7 @@ int main( int argc, char** argv )
 	char* outputFileName;
 	loadParameters(argc,argv, num_of_threads, numClusters, numClustersForChunks, chunk_size, fileName, outputFileName);
 
+	clock_t startPhase1 = clock();
 	//running threads and semaphores
 	init_threads(num_of_threads);
 
@@ -163,14 +165,30 @@ int main( int argc, char** argv )
 			break;
 		}
 	}
+	file.close();
 
+	clock_t startPhase2 = clock();
 	cout<<"Pass 2..." << endl; cout.flush();
 	Mat centers,labels;
 	Mat points = aggregateCenters(centersCollection);
 	cout << "points: " << points.rows << endl; cout.flush();
 	kmeans(points, numClusters, labels, TermCriteria(CV_TERMCRIT_ITER|CV_TERMCRIT_EPS, 0.0001, 10000), attempts, KMEANS_PP_CENTERS, centers );
+
+	//save timing info...
+	double phase1TimeMillisecond = (((double)startPhase2 - startPhase1) * 1000 / CLOCKS_PER_SEC);
+	double phase2TimeMillisecond = (((double)clock() - startPhase2) * 1000 / CLOCKS_PER_SEC);
+
 	cout << "Saving centers..." << endl; cout.flush();
 	saveCenters(centers, outputFileName);
+
+	cout << "Computing SSE... " << endl; cout.flush();
+	double sse = evaluateSSEFromFile(centers, fileName);
+
+	// PRINTING RESULTS
+	cout 	<< 	"Phase1(ms), Phase2(ms), SSE, num_of_threads, numClusters, numClustersForChunks, chunk_size, fileName" << endl;
+	cout 	<< 	phase1TimeMillisecond 	<< ", " << phase2TimeMillisecond 	<< ", " << sse					<< ", "
+			<<	num_of_threads 			<< ", " << numClusters 				<< ", " << numClustersForChunks << ", "
+			<< 	chunk_size 				<< ", " << fileName 				<< endl;
 }
 
 void printUsage(){
@@ -181,10 +199,10 @@ void printUsage(){
 void loadParameters(int argc, char** argv, int &num_of_threads, int &numClusters,
 		int &numClustersForChunks, int& chunk_size, char* &fileName, char* &outputFileName){
 	//DEFAULT VALUES
-	numClustersForChunks =50;
+	numClustersForChunks =5;
 	numClusters = 5;
 	num_of_threads = 2;
-	chunk_size = 1000;
+	chunk_size = 10000;
 	outputFileName = "output.txt";
 	int i = 1;
 	if(argc < 2)

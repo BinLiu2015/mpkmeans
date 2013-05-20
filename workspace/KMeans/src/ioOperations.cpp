@@ -111,6 +111,51 @@ void saveCenters(Mat centers, char* outputFileName){
 	outfile.close();
 }
 
+double evaluateSSEFromFile(Mat centers, char* dataFileName){
+	double sse = 0;
+	ifstream file(dataFileName);
+	//compute sse for each chunk.
+	while( 1  ){
+		vector<string>* lines;
+		lines = getChunkLines(file,1000);
+		Mat data = vec2Mat( getChunk(*lines) );
+		sse += computeSSE(centers, data);
+
+		if(lines->size() < 1000)
+			break;
+
+		delete lines;
+	}
+	file.close();
+	return sse;
+}
+
+
+double leastDistance(Mat point, Mat centers){
+	double leastDistance = DBL_MAX;
+	for(int i=0; i<centers.rows; i++){
+		double dist = 0;
+		for(int j=0; j<point.cols; j++){
+			double dimdist =  point.at<float>(0,j) - centers.at<float>(i,j);
+			dist += dimdist * dimdist; 	//^2
+		}
+		dist = sqrt(dist);
+		if(leastDistance > dist)
+			leastDistance = dist;
+	}
+	return leastDistance;
+}
+
+
+double computeSSE(Mat centers, Mat data){
+	double sse = 0;
+	int rows = data.rows;
+	for(int i=0; i < rows; i++)
+		sse += leastDistance(data.row(i), centers);
+	return sse;
+}
+
+
 template< typename TYPE >
 void print(TYPE val)
 {
