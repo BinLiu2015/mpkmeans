@@ -12,7 +12,7 @@ using namespace std;
 #define IOOPERATIONS_H_
 
 vector<string>* getChunkLines(std::istream& str, int chunkSize);
-void loadParameters(int argc, char** argv, int &num_of_threads, int &numClusters, int &numClustersForChunks, int& chunk_size, char* &fileName, char* &outputFileName);
+void loadParameters(int argc, char** argv, int &num_of_threads, int &numClusters, int &numClustersForChunks, int& chunk_size, char* &fileName,int &sseEnabled, char* &outputFileName);
 Mat vec2Mat(std::vector< vector<float> > chunkInstances);
 vector<vector<float> > getChunk(vector<string> lines);
 void saveCenters(Mat centers, char* outputFileName);

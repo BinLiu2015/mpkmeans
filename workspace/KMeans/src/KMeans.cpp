@@ -18,7 +18,7 @@ sem_t empty,full;
 int f,e;
 pthread_mutex_t mutex;
 
-void loadParameters(int argc, char** argv, int &num_of_threads, int &numClusters, int &numClustersForChunks, int& chunk_size, char* &fileName, char* &outputFileName);
+void loadParameters(int argc, char** argv, int &num_of_threads, int &numClusters, int &numClustersForChunks, int& chunk_size, char* &fileName, int &sseEnabled, char* &outputFileName);
 
 
 /**
@@ -30,9 +30,13 @@ void cluster(chunkInfo *chunk){
 	cout << "\x1b[1;31m++Clustering chunk " << chunk->chunkNo << " with " << data.rows << " rows\x1b[0m\n"; cout.flush();
 
 	Mat labels,*centers = new Mat();
-	kmeans(data, chunk->numClustersForChunks, labels, TermCriteria(CV_TERMCRIT_ITER|CV_TERMCRIT_EPS, 0.0001, 10000), chunk->attempts, KMEANS_PP_CENTERS, *centers);
-	centersCollection.push_back(centers);
-	cout << "\x1b[36;1m--Clustered chunk " << chunk->chunkNo << " with " << data.rows << " rows\x1b[0m\n"; cout.flush();
+	if(data.rows <= chunk->numClustersForChunks){
+		cout << "\x1b[36;1m-- chunk " <<  chunk->chunkNo <<" skipped because K>N ==> skipping KMeans\x1b[0m\n" << endl;
+	}else{
+		kmeans(data, chunk->numClustersForChunks, labels, TermCriteria(CV_TERMCRIT_ITER|CV_TERMCRIT_EPS, 0.0001, 10000), chunk->attempts, KMEANS_PP_CENTERS, *centers);
+		centersCollection.push_back(centers);
+		cout << "\x1b[36;1m--Clustered chunk " << chunk->chunkNo << " with " << data.rows << " rows\x1b[0m\n"; cout.flush();
+	}
 	delete chunk->lines;
 	delete chunk;
 }
@@ -132,13 +136,16 @@ int main( int argc, char** argv )
 	//Loading parameters
 	int numClustersForChunks, numClusters,num_of_threads,chunk_size;
 	int attempts = 1;
+	int sseEnabled = 0;
 	char* fileName;
 	char* outputFileName;
-	loadParameters(argc,argv, num_of_threads, numClusters, numClustersForChunks, chunk_size, fileName, outputFileName);
+	loadParameters(argc,argv, num_of_threads, numClusters, numClustersForChunks, chunk_size, fileName, sseEnabled, outputFileName);
 
-	clock_t startPhase1 = clock();
 	//running threads and semaphores
 	init_threads(num_of_threads);
+
+	struct timeval startPhase1;
+	gettimeofday(&startPhase1, NULL);
 
 	cout << "Loading dataset from " << fileName << endl;
 	ifstream file(fileName);
@@ -167,7 +174,9 @@ int main( int argc, char** argv )
 	}
 	file.close();
 
-	clock_t startPhase2 = clock();
+	struct timeval startPhase2;
+	gettimeofday(&startPhase2, NULL);
+
 	cout<<"Pass 2..." << endl; cout.flush();
 	Mat centers,labels;
 	Mat points = aggregateCenters(centersCollection);
@@ -175,29 +184,33 @@ int main( int argc, char** argv )
 	kmeans(points, numClusters, labels, TermCriteria(CV_TERMCRIT_ITER|CV_TERMCRIT_EPS, 0.0001, 10000), attempts, KMEANS_PP_CENTERS, centers );
 
 	//save timing info...
-	double phase1TimeMillisecond = (((double)startPhase2 - startPhase1) * 1000 / CLOCKS_PER_SEC);
-	double phase2TimeMillisecond = (((double)clock() - startPhase2) * 1000 / CLOCKS_PER_SEC);
+	struct timeval finishPhase2;
+	gettimeofday(&finishPhase2, NULL);
+	double phase1TimeMicrosec = (startPhase2.tv_sec-startPhase1.tv_sec)*1000000+(startPhase2.tv_usec-startPhase1.tv_usec);
+	double phase2TimeMicrosec = (finishPhase2.tv_sec-startPhase2.tv_sec)*1000000+(finishPhase2.tv_usec-startPhase2.tv_usec);
 
 	cout << "Saving centers..." << endl; cout.flush();
 	saveCenters(centers, outputFileName);
 
-	cout << "Computing SSE... " << endl; cout.flush();
-	double sse = evaluateSSEFromFile(centers, fileName);
-
+	double sse = 0;
+	if(sseEnabled == 1){
+		cout << "Computing SSE... " << endl; cout.flush();
+		sse = evaluateSSEFromFile(centers, fileName);
+	}
 	// PRINTING RESULTS
-	cout 	<< 	"Phase1(ms), Phase2(ms), SSE, num_of_threads, numClusters, numClustersForChunks, chunk_size, fileName" << endl;
-	cout 	<< 	phase1TimeMillisecond 	<< ", " << phase2TimeMillisecond 	<< ", " << sse					<< ", "
-			<<	num_of_threads 			<< ", " << numClusters 				<< ", " << numClustersForChunks << ", "
-			<< 	chunk_size 				<< ", " << fileName 				<< endl;
+	cout 	<< 	"Phase1, Phase2, totalRunTime, SSE, num_of_threads, numClusters, numClustersForChunks, chunk_size, fileName" << endl;
+	cout 	<< 	fixed 			<< long(phase1TimeMicrosec) 	<< ", " << long(phase2TimeMicrosec)	<< ", " << long(phase1TimeMicrosec + phase2TimeMicrosec) 	<< ", " <<	scientific <<  sse	<< ", "
+			<<	num_of_threads 	<< ", " << numClusters 				<< ", " << numClustersForChunks << ", "
+			<< 	chunk_size 		<< ", " << fileName << endl;
 }
 
 void printUsage(){
-	cout << "Usage: KMeans -f fileName [-o outputfileName] [-k num_of_clusters] [-c chunk_size] [-chk num_of_cluster_centers_for_each_chunk] [-t max_threads]" << endl;
+	cout << "Usage: KMeans -f fileName [-o outputfileName] [-k num_of_clusters] [-c chunk_size] [-chk num_of_cluster_centers_for_each_chunk] [-t max_threads] [-sse 1 (compute SSE)]" << endl;
 	exit(0);
 }
 
 void loadParameters(int argc, char** argv, int &num_of_threads, int &numClusters,
-		int &numClustersForChunks, int& chunk_size, char* &fileName, char* &outputFileName){
+		int &numClustersForChunks, int& chunk_size, char* &fileName, int &sseEnabled, char* &outputFileName){
 	//DEFAULT VALUES
 	numClustersForChunks =5;
 	numClusters = 5;
@@ -220,6 +233,8 @@ void loadParameters(int argc, char** argv, int &num_of_threads, int &numClusters
 			num_of_threads = atoi(argv[i+1]);
 		}else if (! strcmp(argv[i] , "-o")) {
 			outputFileName = argv[i+1];
+		}else if (! strcmp(argv[i] , "-sse")) {
+			sseEnabled = atoi(argv[i+1]);
 		}
 		i++;
 	}
