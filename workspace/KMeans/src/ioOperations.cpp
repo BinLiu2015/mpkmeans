@@ -139,7 +139,7 @@ double leastDistance(Mat point, Mat centers){
 			double dimdist =  point.at<float>(0,j) - centers.at<float>(i,j);
 			dist += dimdist * dimdist; 	//^2
 		}
-		dist = sqrt(dist);
+		//dist = sqrt(dist);
 		if(leastDistance > dist)
 			leastDistance = dist;
 	}

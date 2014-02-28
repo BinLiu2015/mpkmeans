@@ -33,7 +33,8 @@ void cluster(chunkInfo *chunk){
 	if(data.rows <= chunk->numClustersForChunks){
 		cout << "\x1b[36;1m-- chunk " <<  chunk->chunkNo <<" skipped because K>N ==> skipping KMeans\x1b[0m\n" << endl;
 	}else{
-		kmeans(data, chunk->numClustersForChunks, labels, TermCriteria(CV_TERMCRIT_ITER|CV_TERMCRIT_EPS, 0.0001, 10000), chunk->attempts, KMEANS_PP_CENTERS, *centers);
+		kmeans(data, chunk->numClustersForChunks, labels, TermCriteria(CV_TERMCRIT_ITER|CV_TERMCRIT_EPS, 0.0001, 10), chunk->attempts, KMEANS_PP_CENTERS, *centers);
+		//kmeans(data, chunk->numClustersForChunks, labels, TermCriteria(CV_TERMCRIT_ITER|CV_TERMCRIT_EPS, 0.0001, 10000), chunk->attempts, KMEANS_RANDOM_CENTERS, *centers);
 		centersCollection.push_back(centers);
 		cout << "\x1b[36;1m--Clustered chunk " << chunk->chunkNo << " with " << data.rows << " rows\x1b[0m\n"; cout.flush();
 	}
@@ -69,24 +70,24 @@ void *clusterThread(void *param){
 /**
  * Aggregates outputs of all chunks into a singe matrix
  */
-Mat aggregateCenters(vector< Mat* > centers){
+Mat* aggregateCenters(vector< Mat* > centers){
 	int numColumns = centers[0]->cols;
 	int numPoints = 0;
 	for(unsigned int i=0; i< centers.size();i++)
 		numPoints += centers[i]->rows;
 
 	//coping centers of each chunk to a single matrix
-	Mat mat(numPoints,numColumns,CV_32F);
+	Mat *mat = new Mat(numPoints,numColumns,CV_32F);
 	int pointsAdded = 0;
 	for(unsigned int chunkNo=0; chunkNo< centers.size();chunkNo++){	//for each chunk
 		for(int i=0; i< centers[chunkNo]->rows;	i++, pointsAdded++){	//for each center in each chunk
 			for(int j=0; j<numColumns; j++){
-				mat.at<float>(pointsAdded,j) = centers[chunkNo]->at<float>(i,j);
+				mat->at<float>(pointsAdded,j) = centers[chunkNo]->at<float>(i,j);
 			}
 		}
 
 	}
-	cout << "Total centers: " << mat.rows << endl; cout.flush();
+	cout << "Total centers: " << mat->rows << endl; cout.flush();
 	return mat;
 }
 
@@ -179,9 +180,9 @@ int main( int argc, char** argv )
 
 	cout<<"Pass 2..." << endl; cout.flush();
 	Mat centers,labels;
-	Mat points = aggregateCenters(centersCollection);
-	cout << "points: " << points.rows << endl; cout.flush();
-	kmeans(points, numClusters, labels, TermCriteria(CV_TERMCRIT_ITER|CV_TERMCRIT_EPS, 0.0001, 10000), attempts, KMEANS_PP_CENTERS, centers );
+	Mat *points = aggregateCenters(centersCollection);
+	cout << "points: " << points->rows << endl; cout.flush();
+	kmeans(*points, numClusters, labels, TermCriteria(CV_TERMCRIT_ITER|CV_TERMCRIT_EPS, 0.0001, 10000), attempts, KMEANS_PP_CENTERS, centers );
 
 	//save timing info...
 	struct timeval finishPhase2;
@@ -202,6 +203,7 @@ int main( int argc, char** argv )
 	cout 	<< 	fixed 			<< long(phase1TimeMicrosec) 	<< ", " << long(phase2TimeMicrosec)	<< ", " << long(phase1TimeMicrosec + phase2TimeMicrosec) 	<< ", " <<	scientific <<  sse	<< ", "
 			<<	num_of_threads 	<< ", " << numClusters 				<< ", " << numClustersForChunks << ", "
 			<< 	chunk_size 		<< ", " << fileName << endl;
+	delete points;
 }
 
 void printUsage(){
